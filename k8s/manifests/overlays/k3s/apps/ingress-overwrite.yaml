@@ -65,27 +65,6 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: global-fallback-ingress
-spec:
-  ingressClassName: tailscale
-  tls:
-    - hosts:
-        - errors
-  rules:
-    - host: errors
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: error-page
-                port:
-                  number: 80
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
   name: redisinsight-ingress
 spec:
   ingressClassName: tailscale

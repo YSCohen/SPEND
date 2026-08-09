@@ -4,7 +4,7 @@
 
 ### **S**calable **P**arallel **E**quity, **N**etworked & **D**istributed
 
-*A Kubernetes-native, GitOps-managed equity position management platform — built from scratch by four first-year CS students.*
+*A Kubernetes-native equity position management platform*
 
 ![Rust](https://img.shields.io/badge/Rust-000000?style=flat&logo=rust&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
@@ -52,6 +52,31 @@ Anything that needs individual trade data (single trade lookups, paginated trade
 ### Cold start & recovery
 
 `redis-populator` is the inverse of `db-syncer`: a run-once Job that rebuilds the entire Redis cache from Postgres. It's how the system recovers from a total cache loss, and how a restored database dump gets promoted back into the hot path.
+
+---
+
+## The API
+
+FastAPI, async throughout: an `asyncpg` pool for Postgres and a shared `redis.asyncio` connection pool sized from config. It refuses to start until both are reachable *and* Redis holds the S&P ticker set, retrying five times before failing the pod — better to let Kubernetes restart it than to serve requests against an empty cache.
+
+- **Auth**: argon2 password hashing and a signed JWT delivered as a `session` cookie. Logout blacklists the token in Redis, so a logged-out session dies immediately instead of staying valid until it expires.
+- **Pagination**: `/trades` uses keyset pagination — a `(created_at, trade_id)` tuple compared against the previous page's cursor — so page 100 costs what page 1 does. Filters (account, ticker, time range, own-trades-only) compose into one parameterized query.
+- **Batch booking**: `POST /trade` always takes a list. Each trade is validated independently and the response partitions into `successes` and `failures` with a reason attached to each rejection, so one bad line in a thousand-row paste doesn't sink the rest.
+- **Editing**: `PATCH /edit_trade/{trade_id}` reverts the position effect of the original trade before applying the amended one, so the derived position stays consistent with the trade history that produced it.
+- **Failure translation**: middleware catches `asyncpg` and Redis exceptions and returns 503 rather than 500 — a data layer mid-failover is unavailable, not broken — and times every request on the way out.
+- **Metrics**: `prometheus-fastapi-instrumentator` exposes `/metrics`, and the request-duration series it publishes is exactly what KEDA's Prometheus trigger reads to scale the API 2 → 20 replicas, alongside CPU and memory. The autoscaler is driven by the API's own instrumentation.
+
+---
+
+## The web UI
+
+Streamlit, with `st.navigation` over a page-per-route layout and an auth guard in front of everything but login and register.
+
+- **Grids**: positions and trade history render in AG Grid with per-column sorting and filtering, including a custom date-range comparator on the trade timestamps. Rows are flattened from whichever shape the endpoint returned, and P&L is broken out into realized, unrealized and total.
+- **Live views**: position, trade and account views are `st.fragment(run_every=...)`, so they re-poll on their own without rerunning the whole script. The grids mount with `reload_data=False`; without it, every refresh tore down and rebuilt the entire client-side grid, which at a 6-second interval was frequent enough to make the component fail to load outright.
+- **Mass booking**: paste CSV lines and get a parsed preview with a per-line validation status *before* anything is sent. On submit the payload is chunked into batches of 25 and posted across a five-worker thread pool, so a large paste goes out as several concurrent requests rather than one long serial one.
+- **Session affinity**: the UI runs two replicas behind Traefik with a sticky cookie. Streamlit holds per-session state in the server process, so without pinning a browser to one pod, a mid-session request landing on the other replica finds no session at all.
+- **Degradation**: every backend call goes through a wrapper that distinguishes "couldn't reach the API" from a genuine 401. A connection error shows a message and leaves the session intact; only a real 401 clears the login and redirects. Live prices come from `yfinance` behind a 30-second cache.
 
 ---
 

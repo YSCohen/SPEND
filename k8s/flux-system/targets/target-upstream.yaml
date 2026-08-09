@@ -6,7 +6,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 1m
-  url: https://github.com/SM26-Industrial-Software-Dev/equity-trading-system
+  url: https://github.com/SM26-Industrial-Software-Dev/SPEND
   ref:
     branch: main
 ---

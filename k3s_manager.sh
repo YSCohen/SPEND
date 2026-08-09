@@ -205,8 +205,8 @@ bootstrap_flux() {
     echo ""
     read -p "Enter GitHub Owner [SM26-Industrial-Software-Dev]: " GITHUB_OWNER
     GITHUB_OWNER=${GITHUB_OWNER:-SM26-Industrial-Software-Dev}
-    read -p "Enter Repository Name [equity-trading-system]: " GITHUB_REPO
-    GITHUB_REPO=${GITHUB_REPO:-equity-trading-system}
+    read -p "Enter Repository Name [SPEND]: " GITHUB_REPO
+    GITHUB_REPO=${GITHUB_REPO:-SPEND}
     read -p "Enter Branch [main]: " GITHUB_BRANCH
     GITHUB_BRANCH=${GITHUB_BRANCH:-main}
     read -p "Enter Path [./k8s/clusters/k3s]: " GITHUB_PATH
@@ -244,7 +244,7 @@ setup_make_toolbox() {
     echo "⬇️ Downloading Developer Toolbox (Makefiles)..."
 
     local REPO_OWNER="SM26-Industrial-Software-Dev"
-    local REPO_NAME="equity-trading-system"
+    local REPO_NAME="SPEND"
     local REF="main"
 
     read -p "Branch or tag to fetch Makefiles from [main]: " input_ref
@@ -269,7 +269,7 @@ setup_make_toolbox() {
 # Function to update this script from the repository
 update_self() {
     local REPO_OWNER="SM26-Industrial-Software-Dev"
-    local REPO_NAME="equity-trading-system"
+    local REPO_NAME="SPEND"
     local SCRIPT_PATH="k3s_manager.sh"
 
     read -p "Branch or tag to update from [main]: " REF

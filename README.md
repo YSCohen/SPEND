@@ -8,10 +8,20 @@
 
 ![Rust](https://img.shields.io/badge/Rust-000000?style=flat&logo=rust&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)
+![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=flat&logo=streamlit&logoColor=white)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=flat&logo=kubernetes&logoColor=white)
 ![Flux](https://img.shields.io/badge/Flux-5468FF?style=flat&logo=flux&logoColor=white)
+
 ![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat&logo=redis&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white)
+![CloudNativePG](https://img.shields.io/badge/CloudNativePG-336791?style=flat)
+![Grafana](https://img.shields.io/badge/Grafana-F46800?style=flat&logo=grafana&logoColor=white)
+![Tailscale](https://img.shields.io/badge/Tailscale-242424?style=flat&logo=tailscale&logoColor=white)
+![Traefik](https://img.shields.io/badge/Traefik-24A1C1?style=flat&logo=traefikproxy&logoColor=white)
+
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat&logo=githubactions&logoColor=white)
+![Make](https://img.shields.io/badge/Make-A42E2B?style=flat&logo=make&logoColor=white)
 ![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
 
 </div>
@@ -36,14 +46,14 @@ It runs identically on a laptop (k3d) or across a fleet of networked physical ma
 
 A booked trade never touches Postgres synchronously. The API validates it, updates the appropriate position hash in Redis, and appends the trade to a Redis stream, then returns. Durable persistence happens out of band:
 
-- **`trade-writer`**: a consumer-group worker that batches the trade stream into Postgres using a staging table plus upsert, so replays and retries are idempotent, and edits update. KEDA watches the stream's consumer lag and scales the worker pool 1 → 5 when a batch submission floods the queue.
+- **`trade-writer`**: a consumer-group worker that batches the trade stream into Postgres using a staging table plus upsert, so replays, retries and edits are idempotent. KEDA watches the stream's consumer lag and scales the worker pool 1 → 5 when a batch submission floods the queue.
 - **`db-syncer`**: continuously mirrors users, accounts, positions and the username map from Redis into Postgres.
 
 This is what makes bulk booking work: the user's request is bounded by a Redis round trip, not by Postgres write throughput, and the backlog is absorbed by workers that materialize on demand.
 
 ### The read path (cold)
 
-Anything that needs individual trade data (single trade lookups, paginated trade history) reads Postgres directly through a PgBouncer pooler. Everything else (e.g. positions, accounts, ticker validation, live prices) reads Redis.
+Anything that needs individual trade data (single trade lookups, paginated trade history) reads Postgres directly through a pooled connection. Everything else (e.g. positions, accounts, ticker validation, live prices) reads Redis.
 
 ### Market data
 
@@ -52,6 +62,20 @@ Anything that needs individual trade data (single trade lookups, paginated trade
 ### Cold start & recovery
 
 `redis-populator` is the inverse of `db-syncer`: a run-once Job that rebuilds the entire Redis cache from Postgres. It's how the system recovers from a total cache loss, and how a restored database dump gets promoted back into the hot path.
+
+### Infrastructure & GitOps
+
+The cluster is entirely declarative: every resource lives in Git and is continuously reconciled by **Flux CD**, staged across three ordered targets (`1-infra` → `2-data` → `3-apps`) so infrastructure, the data layer, and the apps that depend on them always come up in the right order. The same manifests run on **k3d** for local development and **K3s** for the distributed physical cluster, which is joined into a secure mesh network by the **Tailscale Kubernetes Operator**. The high-availability data layer is powered by **CloudNativePG**, which handles Postgres replication, failover, and connection pooling — PgBouncer runs as a CNPG-managed pooler rather than a standalone deployment — alongside **Redis Sentinel** behind an HAProxy proxy for the hot-path cache.
+
+### Development workflow
+
+To let the team develop against the same cluster without stepping on each other, the repo leans on **Kustomize**: a single `manifests/base/` defines every app, data-layer, and infrastructure resource, and each developer gets an isolated `overlays/dev-<name>/` overlay — `dev-sean`, `dev-yehuda`, `dev-max`, `dev-will` — plus a dedicated Flux target reconciling that overlay independently, so different image tags or replica counts never collide. `overlays/upstream/` is the production-like overlay Flux deploys by default; `overlays/k3s/` is the equivalent for the distributed remote cluster.
+
+Command-line operations are easily accessible through modular Makefiles (`chaos.mk`, `db.mk`, `logs.mk`, and others, one per functional area), all of which run through the containerized **`k8s-toolbox`** — so nobody needs `kubectl`, `helm`, or `flux` installed locally. `cluster_up.sh` and the interactive `k3s_manager.sh` handle bootstrapping and tearing down the local and distributed clusters respectively, hiding the multi-stage Flux bootstrap behind a single command.
+
+### Observability
+
+**Loki**, **Prometheus**, and **Grafana** run as part of the cluster's monitoring manifests and are reconciled by Flux like everything else. Our most important dashboard — the custom CNPG/cluster-health view — is committed as dashboard JSON and provisioned directly; it includes a "Cluster Health" panel, an ALL SYSTEMS GO / DEGRADED stat rolled up from node and pod counts, alongside combined error/warning log panels sourced from Loki.
 
 ---
 
@@ -87,7 +111,7 @@ Streamlit, with `st.navigation` over a page-per-route layout and an auth guard i
 | **API** | FastAPI · Pydantic · async Postgres + Redis pools · cookie session auth · request-timing middleware |
 | **Web UI** | Streamlit · AG Grid · yfinance · multipage navigation with an auth guard |
 | **Workers** | Rust — `trade-writer`, `db-syncer`, `price-cacher`, `redis-populator` |
-| **Data** | Redis + Sentinel (HAProxy proxy) · PostgreSQL via CloudNativePG · PgBouncer · Adminer · RedisInsight |
+| **Data** | Redis + Sentinel (HAProxy proxy) · PostgreSQL via CloudNativePG, with CNPG-managed PgBouncer poolers · Adminer · RedisInsight |
 | **Orchestration** | Kubernetes (k3d local / K3s distributed) · Kustomize · Flux CD · Traefik ingress · KEDA · Reloader |
 | **Observability** | Loki · Prometheus · Grafana |
 | **Testing & CI** | Locust · GitHub Actions (full cluster bootstrap per PR, multi-arch image publishing) |
@@ -135,9 +159,9 @@ Full setup, overlay and debugging documentation lives in **[DEVELOPERS.md](DEVEL
 
 ## The team
 
-#### [Sean Alter](https://github.com/thegreatestgiant) — Kubernetes, GitOps & distributed infrastructure
+#### [Sean Alter](https://github.com/thegreatestgiant) — Kubernetes, GitOps & infrastructure
 
-Built the Kubernetes layer: the base/overlay Kustomize structure, the staged Flux reconciliation targets, and the per-developer environments. Owns the data layer — Redis Sentinel and its HAProxy proxy, the CloudNativePG cluster and poolers — plus liveness probes, anti-affinity and eviction tuning. Wrote `cluster_up.sh` and the interactive `k3s_manager.sh`, stood up the distributed K3s cluster and its Tailscale operator integration, hardened session cookies at the ingress, and built the chaos and database backup/restore tooling. Contributed UI work throughout.
+Owns everything under `k8s/`: the base/overlay Kustomize structure and per-developer environments, and the staged Flux reconciliation targets. Owns the data layer — Redis Sentinel and its HAProxy proxy, the CloudNativePG cluster and its poolers — plus liveness probes, anti-affinity and eviction tuning. Built and maintains the observability stack (Loki, Prometheus, Grafana), including dashboard provisioning and the cluster-health panels, and the modular Make-based developer toolbox (`k8s-toolbox` plus the `make/*.mk` targets) the rest of the team uses to run the cluster without installing tooling locally. Wrote `cluster_up.sh` and the interactive `k3s_manager.sh`, stood up the distributed K3s cluster and its Tailscale operator integration, hardened session cookies at the ingress, and built the chaos-testing and database backup/restore tooling. Contributed UI work throughout.
 
 #### [Yehuda Cohen](https://github.com/YSCohen) — Rust workers, data model & CI
 

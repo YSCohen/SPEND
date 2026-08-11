@@ -28,7 +28,7 @@ echo "✅ Container engine: $ENGINE"
 cd "$PROJECT_ROOT/k8s"
 
 # Tear down the cluster using the toolbox
-echo "🧹 Destroying K3d cluster..."
+echo "🧹 Destroying k3d cluster..."
 set +e # Disable strict mode temporarily in case the cluster is already gone
 $ENGINE exec k8s-toolbox k3d cluster delete dev-cluster >/dev/null 2>&1
 

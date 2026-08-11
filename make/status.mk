@@ -26,6 +26,13 @@ status-svc: ## 🔌 Show active network services
 	@echo "🔌 ACTIVE NETWORK SERVICES:"
 	@$(DOCKER) exec k8s-toolbox kubectl get svc -A
 
+status-postgres: ## 🐘 Show detailed Postgres cluster health and replication status
+	@echo "🐘 POSTGRES CLUSTER STATUS:"
+	@$(DOCKER) exec k8s-toolbox kubectl get cluster -n data
+	@echo ""
+	@echo "🐘 POSTGRES INSTANCES:"
+	@$(DOCKER) exec k8s-toolbox kubectl get pods -n data -l cnpg.io/cluster=trading-db -L cnpg.io/podRole
+
 check-sync: ## Verify all sync stages are Ready
 	@$(DOCKER) exec k8s-toolbox flux get kustomizations
 

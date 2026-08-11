@@ -30,6 +30,7 @@ chaos-kill: ## 💀 Interactive menu to delete pods for a specific app
 				grafana) echo "app.kubernetes.io/name=grafana";; \
 				trading-db) echo "cnpg.io/cluster=trading-db";; \
 				trading-pooler) echo "cnpg.io/poolerName=trading-pooler";; \
+				redis) echo "app.kubernetes.io/name=redis";; \
 				*) echo "app=$$app";; \
 			esac); \
 			echo "💀 Killing pods for $$app (Label: $$label) in namespace $$ns..."; \

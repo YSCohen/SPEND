@@ -1,5 +1,5 @@
 .PHONY: up down toolbox-up toolbox-down cluster-up cluster-down rebuild
-.PHONY: cluster-up-sean # remove me
+
 
 # ==========================================
 # 🏗️ TOOLBOX & CLUSTER LIFECYCLE
@@ -27,6 +27,6 @@ cluster-up-%: ## Deploy from a personal fork (e.g. make cluster-up-sean)
 cluster-down: ## Delete the local k3d dev cluster
 	-$(DOCKER) exec k8s-toolbox k3d cluster delete dev-cluster
 
-rebuild: cluster-down toolbox-down ## Nuke everything and rebuild from scratch (upstream)
+rebuild: cluster-down toolbox-down ## Nuke everything and rebuild from scratch (sean)
 	@sleep 2
-	$(MAKE) --no-print-directory cluster-up
+	$(MAKE) --no-print-directory cluster-up-sean

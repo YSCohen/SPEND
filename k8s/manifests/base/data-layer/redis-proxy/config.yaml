@@ -28,6 +28,6 @@ data:
         tcp-check expect string +PONG
         tcp-check send info\ replication\r\n
         tcp-check expect string role:master
-        server redis-0 redis-node-0.redis-headless.data.svc.cluster.local:6379 check inter 3s rise 2 fall 2 resolvers k8s resolve-prefer ipv4
-        server redis-1 redis-node-1.redis-headless.data.svc.cluster.local:6379 check inter 3s rise 2 fall 2 resolvers k8s resolve-prefer ipv4
-        server redis-2 redis-node-2.redis-headless.data.svc.cluster.local:6379 check inter 3s rise 2 fall 2 resolvers k8s resolve-prefer ipv4
+        server redis-0 redis-node-0.redis-headless.data.svc.cluster.local:6379 check on-marked-down shutdown-sessions inter 3s rise 2 fall 2 resolvers k8s resolve-prefer ipv4
+        server redis-1 redis-node-1.redis-headless.data.svc.cluster.local:6379 check on-marked-down shutdown-sessions inter 3s rise 2 fall 2 resolvers k8s resolve-prefer ipv4
+        server redis-2 redis-node-2.redis-headless.data.svc.cluster.local:6379 check on-marked-down shutdown-sessions inter 3s rise 2 fall 2 resolvers k8s resolve-prefer ipv4

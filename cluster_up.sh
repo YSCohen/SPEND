@@ -115,7 +115,7 @@ $ENGINE compose up -d --build
 
 echo "🚀 Creating cluster (bootstrapping Flux controllers)..."
 
-# Use --no-host-dns to stop K3d from touching /etc/resolv.conf
+# Use --no-host-dns to stop k3d from touching /etc/resolv.conf
 $ENGINE exec -e HOST_ROOT="$PROJECT_ROOT" -i k8s-toolbox \
     k3d cluster create --config k8s/k3d-config.yaml \
     --k3s-arg "--resolv-conf=/tmp/custom-resolv.conf@server:*" \

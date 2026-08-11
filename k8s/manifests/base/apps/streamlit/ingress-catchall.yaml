@@ -1,0 +1,19 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: streamlit-catchall-ingress
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: networking-streamlit-fallback@kubernetescrd
+    traefik.ingress.kubernetes.io/router.priority: "1"
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: streamlit-svc
+                port:
+                  number: 80

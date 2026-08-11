@@ -21,20 +21,18 @@ patches:
                 env:
                   - name: ENVIRONMENT
                     value: "dev-sean"
-                image: api-image:dev-sean
-                imagePullPolicy: IfNotPresent
-  - target:
-      kind: Deployment
-      name: streamlit
-    patch: |-
-      apiVersion: apps/v1
-      kind: Deployment
-      metadata:
-        name: streamlit
-      spec:
-        template:
-          spec:
-            containers:
-              - name: streamlit
-                image: web-ui-image:dev-sean
-                imagePullPolicy: IfNotPresent
+  # - target:
+  #     kind: Deployment
+  #     name: streamlit
+  #   patch: |-
+  #     apiVersion: apps/v1
+  #     kind: Deployment
+  #     metadata:
+  #       name: streamlit
+  #     spec:
+  #       template:
+  #         spec:
+  #           containers:
+  #             - name: streamlit
+  #               image: web-ui-image:dev-sean
+  #               imagePullPolicy: IfNotPresent

@@ -12,7 +12,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  CANONICAL_REPO: SM26-Industrial-Software-Dev/equity-trading-system
+  CANONICAL_REPO: SM26-Industrial-Software-Dev/SPEND
 
 jobs:
   # Build the two Python images

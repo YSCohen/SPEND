@@ -66,7 +66,7 @@ We use **Loki** to aggregate logs.
 ### K3S Manager
 If you need to deploy and manage a distributed remote cluster, use the interactive manager script:
 ```sh 
-curl -sSL "https://raw.githubusercontent.com/SM26-Industrial-Software-Dev/equity-trading-system/main/k3s_manager.sh" -o k3s_manager.sh && chmod +x k3s_manager.sh
+curl -sSL "https://raw.githubusercontent.com/SM26-Industrial-Software-Dev/SPEND/main/k3s_manager.sh" -o k3s_manager.sh && chmod +x k3s_manager.sh
 ```
 
 ### Tailscale Kubernetes Operator

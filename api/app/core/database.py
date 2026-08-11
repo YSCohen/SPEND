@@ -17,4 +17,5 @@ async def create_pool():
         database=postgres_db,
         min_size=1,
         max_size=3,
+        command_timeout=5.0,
     )

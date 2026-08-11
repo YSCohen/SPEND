@@ -3,7 +3,7 @@
 # ==========================================
 # 🔄 ROLLING RESTARTS (BOUNCING)
 # ==========================================
-BOUNCE_BANK = fastapi streamlit locust adminer db-syncer trade-writer price-cacher poolers
+BOUNCE_BANK = fastapi streamlit locust adminer db-syncer trade-writer price-cacher poolers grafana
 
 bounce: ## 🔄 Interactive menu to safely restart a deployment
 	@echo "============================================="
@@ -17,6 +17,7 @@ bounce: ## 🔄 Interactive menu to safely restart a deployment
 				locust) echo "load-testing";; \
 				streamlit) echo "frontend";; \
 				adminer|poolers) echo "data";; \
+				grafana) echo "monitoring";; \
 				*) echo "backend";; \
 			esac); \
 			if [ "$$app" = "poolers" ]; then \
@@ -26,6 +27,9 @@ bounce: ## 🔄 Interactive menu to safely restart a deployment
 			elif [ "$$app" = "fastapi" ]; then \
 				echo "♻️ Bouncing fastapi-api in backend..."; \
 				$(DOCKER) exec k8s-toolbox kubectl rollout restart deployment/fastapi-api -n backend; \
+			elif [ "$$app" = "grafana" ]; then \
+				echo "♻️ Bouncing loki-stack-grafana in monitoring..."; \
+				$(DOCKER) exec k8s-toolbox kubectl rollout restart deployment/loki-stack-grafana -n monitoring; \
 			else \
 				echo "♻️ Bouncing $$app in $$ns..."; \
 				$(DOCKER) exec k8s-toolbox kubectl rollout restart deployment/$$app -n $$ns; \

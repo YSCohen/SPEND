@@ -40,7 +40,7 @@ It runs identically on a laptop (k3d) or across a fleet of networked physical ma
 
 ## Architecture
 
-![Architecture Diagram](Architecture%20Diagram.png)
+![Architecture Diagram](architecture_diagram.png)
 
 ### The write path (hot)
 
